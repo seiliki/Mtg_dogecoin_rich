@@ -1,3 +1,4 @@
+import string
 from pprint import pprint
 import pandas
 import simplejson
@@ -40,9 +41,27 @@ for i in db:
     ndf = pandas.DataFrame.from_dict(i)
     df = pandas.concat([df, ndf])
 
-df.index = range(df.shape[0])
+# df.index = range(df.shape[0])
+#
+# print df['editions'][100]
+# df['price_high'] = df['editions'].map(lambda x: x[0]['price']['high'])
+#
+# print df['price_high'].describe()
 
-print df['editions'][100]
-df['price_high'] = df['editions'].map(lambda x: x[0]['price']['high'])
+prices = pandas.read_csv('../data/mtgsprices-2017-05-12.csv')
 
-print df['price_high'].describe()
+#  convert a dollar
+prices['Market'] = prices['Market'].apply(lambda x: x[1:].replace(',', '')).astype(float)
+
+gp = prices.groupby(by='Name')['Market'].agg([pandas.np.mean, pandas.np.max, pandas.np.min])
+
+m = pandas.merge(left=df, right=gp, left_on='name', right_index=True)
+
+m.index = range(m.shape[0])
+
+
+print df.shape
+print m
+
+
+m.to_csv('../data/joined.csv', encoding='utf-8')
